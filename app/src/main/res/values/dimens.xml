@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="space_micro">1dp</dimen>
+    <dimen name="space_tiny">2dp</dimen>
+    <dimen name="space_small">4dp</dimen>
+    <dimen name="space_medium">8dp</dimen>
+    <dimen name="space_xmedium">12dp</dimen>
+    <dimen name="space_large">16dp</dimen>
+    <dimen name="space_xlarge">20dp</dimen>
+    <dimen name="space_xxlarge">24dp</dimen>
+    <dimen name="space_xxxlarge">28dp</dimen>
+    <dimen name="space_huge">32dp</dimen>
+    <dimen name="space_xhuge">36dp</dimen>
+
+
+
+    <dimen name="padding_bottom_button">100dp</dimen>
+</resources>

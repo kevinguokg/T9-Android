@@ -1,0 +1,16 @@
+<resources>
+    <string name="app_name">T9</string>
+
+    <string name="dummy_button">Dummy Button</string>
+    <string name="dummy_content">DUMMY\nCONTENT</string>
+
+    <string name="local_game_btn_text">Play Local!</string>
+    <string name="friend_game_btn_text">Play With a Friend!</string>
+    <string name="online_game_btn_text">Online Battle!</string>
+    <string name="how_to_play_btn_text">How to Play!</string>
+
+
+    <string name="rematch_btn_text">Rematch!</string>
+    <string name="go_back_btn_text">Go Back!</string>
+
+</resources>

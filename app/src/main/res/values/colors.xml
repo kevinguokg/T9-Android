@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#3F51B5</color>
+    <color name="colorPrimaryDark">#303F9F</color>
+    <color name="colorAccent">#FF4081</color>
+
+    <color name="black_overlay">#66000000</color>
+
+    <color name="T9BlueLight">#5BC0DE</color>
+    <color name="T9White">#FFFFFF</color>
+    <color name="T9Gray1">#30EAEAEA</color>
+    <color name="T9Player1">#9048ABE1</color>
+    <color name="T9Player2">#90CB5198</color>
+    <color name="T9MiddleStatusBar">#90136B13</color>
+
+</resources>
