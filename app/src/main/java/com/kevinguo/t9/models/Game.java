@@ -4,7 +4,7 @@ package com.kevinguo.t9.models;
  * Created by kevinguo on 16-01-29.
  */
 public class Game {
-    public enum GameStatus {PENDING, STARTED, COMPLETED};
+    public enum GameStatus {PENDING, STARTED, COMPLETED, ABORTED};
     public enum GameTurn {PLAYER1, PLAYER2};
     public enum GameWinner {NONE, PLAYER1, PLAYER2};
     public enum GameType {DEMO, LOCAL, FRIENDS, ONLINE};

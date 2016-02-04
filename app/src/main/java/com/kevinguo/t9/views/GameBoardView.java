@@ -1,6 +1,8 @@
 package com.kevinguo.t9.views;
 
 import android.app.AlertDialog;
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.graphics.Canvas;
@@ -28,8 +30,10 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Created by kevinguo on 16-01-29.
@@ -54,6 +58,8 @@ public class GameBoardView extends View {
     private Game game;
 
     private PadRaw[][][][] padRaw;
+
+    private HashMap<String, Object> hashGameBoard;
 
     // view models
     private GameButton localGameBtn, friendGameBtn, onlineGameBtn, howToPlayBtn;
@@ -137,17 +143,10 @@ public class GameBoardView extends View {
 
         rawGameBoardData = new JSONObject();
 
-        padRaw = new PadRaw[3][3][3][3];
+        initPadRaw();
 
-        for (int i = 0; i < 3; i++) {
-            for (int j = 0; j < 3; j++) {
-                for (int k = 0; k < 3; k++) {
-                    for (int l = 0; l < 3; l++) {
-                        padRaw[i][j][k][l] = new PadRaw(k, l, 0, "E", 1, 0);
-                    }
-                }
-            }
-        }
+        hashGameBoard = new HashMap<>();
+
 
         try {
 
@@ -159,6 +158,20 @@ public class GameBoardView extends View {
 
         } catch (JSONException e) {
             e.printStackTrace();
+        }
+    }
+
+    private void initPadRaw(){
+        padRaw = new PadRaw[3][3][3][3];
+
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
+                for (int k = 0; k < 3; k++) {
+                    for (int l = 0; l < 3; l++) {
+                        padRaw[i][j][k][l] = new PadRaw(k, l, 0, "E", 1, 0);
+                    }
+                }
+            }
         }
     }
 
@@ -198,6 +211,11 @@ public class GameBoardView extends View {
                 player2BarWidth = canvas.getWidth() * 0.0f;
                 gameResultStr = "Player " + (game.getGameWinner() == Game.GameWinner.PLAYER1 ? "1" : "2") + " is the winner!";
             }
+        } else if (game.getGameStatus() == Game.GameStatus.ABORTED){
+            player1BarWidth = canvas.getWidth() * 0.2f;
+            middleBarWidth = canvas.getWidth() * 0.6f;
+            player2BarWidth = canvas.getWidth() * 0.2f;
+            gameResultStr = "Your opponent has left!";
         } else {
             if (game.getGameTurn() == Game.GameTurn.PLAYER1) {
                 player1BarWidth = canvas.getWidth() * 0.3f;
@@ -427,13 +445,18 @@ public class GameBoardView extends View {
                     continue;
 
                 if (btn.rect.contains(touchX, touchY)) {
+                    Log.d("hihihi", "a btn is pressed type " + btn.getButtonText() + " hidden? " + btn.isHidden());
 //                    Toast.makeText(context, "button " + btn.getButtonText() + " touched", Toast.LENGTH_SHORT).show();
 
                     if (game.getGameType() == Game.GameType.DEMO) {
                         if (btn.getButtonText().equals(local)) {
+                            Log.d("hihihi", "local btn is pressed");
+
                             game = new Game(Game.GameType.LOCAL);
                             // start local game
                         } else if (btn.getButtonText().equals(friend)) {
+                            Log.d("hihihi", "friend btn is pressed");
+
                             // start friend game
                             Hashtable hashtable = new Hashtable();
                             hashtable.put("gameStatus", "pending");
@@ -449,15 +472,98 @@ public class GameBoardView extends View {
                                         Toast.makeText(context, "Error occured when creating game.", Toast.LENGTH_LONG).show();
                                     } else {
                                         game = new Game(Game.GameType.FRIENDS);
+                                        localGameBtn.setIsHidden(true);
+                                        friendGameBtn.setIsHidden(true);
+                                        onlineGameBtn.setIsHidden(true);
+                                        howToPlayBtn.setIsHidden(true);
+
                                         myFirebaseRef.child("friendgames/" + roomNumber).addValueEventListener(new ValueEventListener() {
                                             @Override
                                             public void onDataChange(DataSnapshot dataSnapshot) {
                                                 Log.d("dataSnapShot", "dataSnapShot is recved! =" + dataSnapshot.getValue());
 
-                                                if (dataSnapshot.getValue() == null){
-                                                    // opponent has left
 
+                                                if (dataSnapshot.getValue() == null) {
+                                                    // opponent has left
+                                                    game.setGameStatus(Game.GameStatus.ABORTED);
+                                                    invalidate();
+                                                    return;
                                                 }
+
+
+                                                HashMap hashMap = (HashMap) dataSnapshot.getValue(true);
+
+                                                if (hashMap.containsKey("gameboard")) {
+                                                    for (int i = 0; i < 3; i++) {
+                                                        for (int j = 0; j < 3; j++) {
+                                                            for (int k = 0; k < 3; k++) {
+                                                                for (int l = 0; l < 3; l++) {
+                                                                    HashMap padRow = (HashMap) ((HashMap) hashMap.get("gameboard")).get(String.valueOf(i));
+                                                                    HashMap thatPad = (HashMap) padRow.get(String.valueOf(j));
+                                                                    HashMap cellRow = (HashMap) thatPad.get(String.valueOf(k));
+                                                                    HashMap thatCell = (HashMap) cellRow.get(String.valueOf(l));
+
+                                                                    if (((Long) thatCell.get("ownBy")).intValue() != padRaw[i][j][k][l].getOwnBy()) {
+                                                                        game.getGameBoard().getPads()[i][j].getCells()[k][l].setCellStatus(game.getGameTurn() == Game.GameTurn.PLAYER1 ? Cell.CellStatus.PLAYER1 : Cell.CellStatus.PLAYER2);
+                                                                        // check pad and board win
+                                                                        checkWin(i, j, k, l, game.getGameBoard().getPads()[i][j].getCells()[k][l].getCellStatus());
+                                                                    }
+
+                                                                    padRaw[i][j][k][l].setLocalWinner(((Long) thatCell.get("localWinner")).intValue()); // TODO null pointer here
+                                                                    padRaw[i][j][k][l].setOwnBy(((Long) thatCell.get("ownBy")).intValue());
+                                                                    padRaw[i][j][k][l].setSymbol((String) thatCell.get("symbol"));
+                                                                    padRaw[i][j][k][l].setPadActive(((Long) thatCell.get("padActive")).intValue());
+
+                                                                    gameBoardV.gamePadVs[i][j].setPadStatus(((Long) thatCell.get("padActive")).intValue() == 1 ? Pad.PadStatus.ACTIVE : Pad.PadStatus.INACTIVE);
+                                                                    gameBoardV.gamePadVs[i][j].gameCells[k][l].setCellStatus(((Long) thatCell.get("ownBy")).intValue() == 0 ? Cell.CellStatus.EMPTY : ((Long) thatCell.get("ownBy")).intValue() == 1 ? Cell.CellStatus.PLAYER1 : Cell.CellStatus.PLAYER2);
+
+
+                                                                }
+                                                            }
+
+                                                            HashMap padRow = (HashMap) ((HashMap) hashMap.get("gameboard")).get(String.valueOf(i));
+                                                            HashMap thatPad = (HashMap) padRow.get(String.valueOf(j));
+                                                            HashMap cellRow = (HashMap) thatPad.get(String.valueOf(0));
+                                                            HashMap thatCell = (HashMap) cellRow.get(String.valueOf(0));
+
+                                                            //if (((Long) thatCell.get("padActive")).intValue() != padRaw[i][j][0][0].getPadActive()){
+                                                            // set active
+                                                            game.getGameBoard().getPads()[i][j].setPadStatus(((Long) thatCell.get("padActive")).intValue() == 1 ? Pad.PadStatus.ACTIVE : Pad.PadStatus.INACTIVE);
+                                                            gameBoardV.gamePadVs[i][j].setPadStatus(((Long) thatCell.get("padActive")).intValue() == 1 ? Pad.PadStatus.ACTIVE : Pad.PadStatus.INACTIVE);
+                                                            //}
+                                                        }
+                                                    }
+                                                }
+
+                                                if (hashMap.containsKey("gameStatus")) {
+                                                    String gameStatus = (String) (hashMap.get("gameStatus"));
+                                                    switch (gameStatus) {
+                                                        case "pending":
+                                                            game.setGameStatus(Game.GameStatus.PENDING);
+                                                            break;
+
+                                                        case "started":
+                                                            game.setGameStatus(Game.GameStatus.STARTED);
+                                                            break;
+
+                                                        case "completed":
+                                                            game.setGameStatus(Game.GameStatus.COMPLETED);
+                                                            break;
+
+                                                        default:
+                                                            game.setGameStatus(Game.GameStatus.PENDING);
+                                                            break;
+                                                    }
+                                                }
+
+                                                if (hashMap.containsKey("turn")) {
+                                                    game.setGameTurn((((Long) hashMap.get("turn")).intValue() == 1 ? Game.GameTurn.PLAYER2 : Game.GameTurn.PLAYER1));
+                                                    Log.d("hihihi:", "player " + (game.getGameTurn() == Game.GameTurn.PLAYER1 ? "1" : "2") + " turn");
+                                                }
+                                                // TODO update game board data models (raw) and view models
+
+                                                invalidate();
+
                                             }
 
                                             @Override
@@ -465,25 +571,32 @@ public class GameBoardView extends View {
 
                                             }
                                         });
+
+                                        ClipboardManager clipboardManager = (ClipboardManager) context.getSystemService(Context.CLIPBOARD_SERVICE);
+                                        ClipData clipData = ClipData.newPlainText("", "https://t9.firebaseapp.com/#/friend/" + roomNumber);
+                                        clipboardManager.setPrimaryClip(clipData);
+                                        Toast.makeText(context, "Game link is copied to clipboard! Room number is " + roomNumber, Toast.LENGTH_LONG).show();
+
                                         invalidate();
                                     }
                                 }
                             });
                         } else if (btn.getButtonText().equals(online)) {
+                            Log.d("hihihi", "online btn is pressed");
+
                             // start online game
 
                         } else if (btn.getButtonText().equals(howToPlay)) {
+                            Log.d("hihihi", "hot to play btn is pressed");
+
                             // start how to play instructions
 
                         }
 
-                        localGameBtn.setIsHidden(true);
-                        friendGameBtn.setIsHidden(true);
-                        onlineGameBtn.setIsHidden(true);
-                        howToPlayBtn.setIsHidden(true);
-
                     } else {
                         if (btn.getButtonText().equals(rematch)) {
+                            Log.d("hihihi", "rematch btn is pressed");
+
                             if (game.getTurnCount() > 0) {
                                 new AlertDialog.Builder(context)
                                         .setTitle("Confirm")
@@ -491,8 +604,19 @@ public class GameBoardView extends View {
                                         .setPositiveButton("Restart", new DialogInterface.OnClickListener() {
                                             @Override
                                             public void onClick(DialogInterface dialog, int which) {
-                                                game = new Game(Game.GameType.LOCAL);
-                                                gameBoardV = new GameBoardV();
+
+                                                if (game.getGameType() == Game.GameType.LOCAL){
+                                                    game = new Game(Game.GameType.LOCAL);
+                                                    gameBoardV = new GameBoardV();
+                                                } else if (game.getGameType() == Game.GameType.FRIENDS || game.getGameType() == Game.GameType.ONLINE){
+                                                    game = new Game(game.getGameType() == Game.GameType.FRIENDS ? Game.GameType.FRIENDS : Game.GameType.ONLINE);
+                                                    gameBoardV = new GameBoardV();
+                                                    initPadRaw();
+
+                                                    sendGameStatuses();
+
+                                                }
+
                                                 invalidate();
                                             }
                                         })
@@ -502,6 +626,9 @@ public class GameBoardView extends View {
 
                             // start local game
                         } else if (btn.getButtonText().equals(goBack)) {
+                            Log.d("hihihi", "go back btn is pressed");
+
+                            myFirebaseRef.child("friendgames/" + roomNumber).setValue(null);
                             // go back now
                             game = new Game(Game.GameType.DEMO);
 
@@ -522,11 +649,11 @@ public class GameBoardView extends View {
                             for (int k = 0; k < 3; k++) {
                                 for (int l = 0; l < 3; l++) {
                                     GameCell thisCell = gameBoardV.gamePadVs[i][j].gameCells[k][l];
-                                    if (thisCell.rectF.contains(touchX, touchY) && game.getGameBoard().getPads()[i][j].getPadStatus() == Pad.PadStatus.ACTIVE) {
+                                    if (thisCell.rectF.contains(touchX, touchY)) {
                                         //Toast.makeText(context, "pad[" + i + "][" + j + "], cell[" + k + "][" + l + "] is clicked!", Toast.LENGTH_SHORT).show();
 
                                         if (game.getGameType() == Game.GameType.LOCAL) {
-                                            if (game.getGameBoard().getPads()[i][j].getCells()[k][l].getCellStatus() == Cell.CellStatus.EMPTY) {
+                                            if (game.getGameBoard().getPads()[i][j].getCells()[k][l].getCellStatus() == Cell.CellStatus.EMPTY && game.getGameBoard().getPads()[i][j].getPadStatus() == Pad.PadStatus.ACTIVE) {
                                                 // play game
 
                                                 // update cell status
@@ -545,18 +672,28 @@ public class GameBoardView extends View {
 
 //                                            invalidate();
                                         } else if (game.getGameType() == Game.GameType.FRIENDS || game.getGameType() == Game.GameType.ONLINE) {
-                                            padRaw[i][j][k][l].setOwnBy(game.getGameTurn() == Game.GameTurn.PLAYER1 ? 1 : -1);
-                                            padRaw[i][j][k][l].setSymbol(game.getGameTurn() == Game.GameTurn.PLAYER1 ? "X" : "O");
-                                            updatePadsActiveness(i, j, k, l);
-                                            switchTurn();
-                                            Hashtable hashtable = new Hashtable();
-                                            hashtable.put("gameStatus", "started");
-                                            hashtable.put("gameboard", padRaw);
-                                            hashtable.put("turn", game.getGameTurn() == Game.GameTurn.PLAYER1 ? 0 : 1);
-                                            myFirebaseRef.child("friendgames/" + roomNumber).setValue(hashtable);
+                                            if (game.getGameStatus() != Game.GameStatus.ABORTED && game.getGameTurn() == Game.GameTurn.PLAYER1 && padRaw[i][j][k][l].getOwnBy() == 0 && padRaw[i][j][0][0].getPadActive() == 1){
+                                                padRaw[i][j][k][l].setOwnBy(game.getGameTurn() == Game.GameTurn.PLAYER1 ? 1 : -1);
+                                                padRaw[i][j][k][l].setSymbol(game.getGameTurn() == Game.GameTurn.PLAYER1 ? "X" : "O");
+                                                updatePadsActiveness(i, j, k, l);
+
+                                                thisCell.setCellStatus(game.getGameTurn() == Game.GameTurn.PLAYER1 ? Cell.CellStatus.PLAYER1 : Cell.CellStatus.PLAYER2);
+                                                game.getGameBoard().getPads()[i][j].getCells()[k][l].setCellStatus(game.getGameTurn() == Game.GameTurn.PLAYER1 ? Cell.CellStatus.PLAYER1 : Cell.CellStatus.PLAYER2);
+
+                                                // check pad and board win
+                                                checkWin(i, j, k, l, game.getGameBoard().getPads()[i][j].getCells()[k][l].getCellStatus());
+
+                                                switchTurn();
+//                                                Hashtable hashtable = new Hashtable();
+//                                                hashtable.put("gameStatus", game.getGameStatus() == Game.GameStatus.STARTED ? "started" : "pending");
+//                                                hashtable.put("gameboard", padRaw);
+//                                                hashtable.put("turn", game.getGameTurn() == Game.GameTurn.PLAYER1 ? 0 : 1);
+//                                                myFirebaseRef.child("friendgames/" + roomNumber).setValue(hashtable);
+
+                                                sendGameStatuses();
+                                            }
+
                                         }
-
-
                                         invalidate();
                                     }
                                 }
@@ -568,6 +705,14 @@ public class GameBoardView extends View {
         }
 
         return true;
+    }
+
+    private void sendGameStatuses(){
+        Hashtable hashtable = new Hashtable();
+        hashtable.put("gameStatus", game.getGameStatus() == Game.GameStatus.STARTED ? "started" : "pending");
+        hashtable.put("gameboard", padRaw);
+        hashtable.put("turn", game.getGameTurn() == Game.GameTurn.PLAYER1 ? 0 : 1);
+        myFirebaseRef.child("friendgames/" + roomNumber).setValue(hashtable);
     }
 
     private void updatePadsActiveness(int i, int j, int k, int l) {
@@ -587,7 +732,10 @@ public class GameBoardView extends View {
 
                 }
             }
-        } else {
+        }
+
+
+        else {
             for (int a = 0; a < 3; a++) {
                 for (int b = 0; b < 3; b++) {
                     for (int c = 0; c < 3; c++) {
@@ -618,6 +766,10 @@ public class GameBoardView extends View {
             Pad.PadWinner padWinner = checkPadWin(i, j, k, l, cellStatus);
             if (padWinner != Pad.PadWinner.NONE) {
                 game.getGameBoard().getPads()[i][j].setPadWinner(padWinner);
+                if (game.getGameType() == Game.GameType.FRIENDS || game.getGameType() == Game.GameType.ONLINE){
+                    padRaw[i][j][k][l].setLocalWinner(game.getGameTurn() == Game.GameTurn.PLAYER1 ? 1 : -1);
+                    padRaw[i][j][0][0].setLocalWinner(game.getGameTurn() == Game.GameTurn.PLAYER1 ? 1 : -1);
+                }
             }
         }
 
