@@ -7,7 +7,7 @@ public class Pad {
     public enum PadStatus {INACTIVE, ACTIVE};
     public enum PadWinner {NONE, PLAYER1, PLAYER2};
 
-    private PadWinner padWinner;  // localwinner
+    private PadWinner padWinner;  // local winner
     private PadStatus padStatus; // padActive
 
     private int row, col;

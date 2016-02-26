@@ -13,6 +13,7 @@ public class Game {
 
     private GameType gameType;
     private GameTurn gameTurn;
+    private GameTurn gameHostTurn;
     private GameStatus gameStatus;
     private GameWinner gameWinner;
     private boolean isWinnerDeclared;
@@ -52,6 +53,8 @@ public class Game {
         this.gameTurn = GameTurn.PLAYER1;
         this.gameWinner = GameWinner.NONE;
         this.isWinnerDeclared = false;
+        this.gameHostTurn = GameTurn.PLAYER1;
+        this.turnCount = 0;
     }
 
     private void initGameBoard(){
@@ -115,5 +118,13 @@ public class Game {
 
     public int getTurnCount() {
         return turnCount;
+    }
+
+    public GameTurn getGameHostTurn() {
+        return gameHostTurn;
+    }
+
+    public void setGameHostTurn(GameTurn gameHostTurn) {
+        this.gameHostTurn = gameHostTurn;
     }
 }
