@@ -174,8 +174,6 @@ public class GameBoardView extends View {
 
         initPadRaw();
 
-        hashGameBoard = new HashMap<>();
-
         gameTurnThread = new GameTurnThread(this);
         gameButtonThread = new GameTurnThread(this);
 
@@ -708,7 +706,7 @@ public class GameBoardView extends View {
 
             // game board interactions
             if (game.getGameType() == Game.GameType.LOCAL || game.getGameType() == Game.GameType.FRIENDS || game.getGameType() == Game.GameType.ONLINE) {
-                if (game.getGameWinner() == Game.GameWinner.NONE) {
+                if (game.getGameWinner() == Game.GameWinner.NONE && game.getGameStatus() != Game.GameStatus.COMPLETED) {
                     for (int i = 0; i < 3; i++) {
                         for (int j = 0; j < 3; j++) {
                             for (int k = 0; k < 3; k++) {
@@ -1150,16 +1148,14 @@ public class GameBoardView extends View {
             }
         }
 
-        if (game.getGameBoard().getPads()[i][j].getPadWinner() != Pad.PadWinner.NONE) {
-            // check game winner
-            Game.GameWinner gameWinner = checkGameWin(i, j, game.getGameBoard().getPads()[i][j].getPadWinner());
-            if (gameWinner != Game.GameWinner.NONE) {
-                // yay! win!
-                game.setGameWinner(gameWinner);
-            } else if (game.getTurnCount() == Game.MAX_TURN_COUNT) {
-                // oops, draw!
-                game.declareDraw();
-            }
+        // check game winner
+        Game.GameWinner gameWinner = checkGameWin(i, j, game.getGameBoard().getPads()[i][j].getPadWinner());
+        if (gameWinner != Game.GameWinner.NONE) {
+            // yay! win!
+            game.setGameWinner(gameWinner);
+        } else if (game.getTurnCount() == Game.MAX_TURN_COUNT) {
+            // oops, draw!
+            game.declareDraw();
         }
     }
 
@@ -1172,7 +1168,7 @@ public class GameBoardView extends View {
             if (game.getGameBoard().getPads()[i][a].getPadWinner() != padWinner)
                 break;
             if (a == 2) {
-                return padWinner == Pad.PadWinner.PLAYER1 ? Game.GameWinner.PLAYER1 : Game.GameWinner.PLAYER2;
+                return padWinner == (Pad.PadWinner.NONE) ? Game.GameWinner.NONE : (padWinner == Pad.PadWinner.PLAYER1) ? Game.GameWinner.PLAYER1 : Game.GameWinner.PLAYER2;
             }
         }
 
@@ -1181,7 +1177,7 @@ public class GameBoardView extends View {
             if (game.getGameBoard().getPads()[a][j].getPadWinner() != padWinner)
                 break;
             if (a == 2) {
-                return padWinner == Pad.PadWinner.PLAYER1 ? Game.GameWinner.PLAYER1 : Game.GameWinner.PLAYER2;
+                return padWinner == (Pad.PadWinner.NONE) ? Game.GameWinner.NONE : (padWinner == Pad.PadWinner.PLAYER1) ? Game.GameWinner.PLAYER1 : Game.GameWinner.PLAYER2;
             }
         }
 
@@ -1190,7 +1186,7 @@ public class GameBoardView extends View {
             if (game.getGameBoard().getPads()[a][b].getPadWinner() != padWinner)
                 break;
             if (a == 2 && b == 2) {
-                return padWinner == Pad.PadWinner.PLAYER1 ? Game.GameWinner.PLAYER1 : Game.GameWinner.PLAYER2;
+                return padWinner == (Pad.PadWinner.NONE) ? Game.GameWinner.NONE : (padWinner == Pad.PadWinner.PLAYER1)  ? Game.GameWinner.PLAYER1 : Game.GameWinner.PLAYER2;
             }
         }
 
@@ -1199,7 +1195,7 @@ public class GameBoardView extends View {
             if (game.getGameBoard().getPads()[a][b].getPadWinner() != padWinner)
                 break;
             if (a == 2 && b == 0) {
-                return padWinner == Pad.PadWinner.PLAYER1 ? Game.GameWinner.PLAYER1 : Game.GameWinner.PLAYER2;
+                return padWinner == (Pad.PadWinner.NONE) ? Game.GameWinner.NONE : (padWinner == Pad.PadWinner.PLAYER1)  ? Game.GameWinner.PLAYER1 : Game.GameWinner.PLAYER2;
             }
         }
 
