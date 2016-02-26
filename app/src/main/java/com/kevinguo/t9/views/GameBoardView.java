@@ -70,7 +70,7 @@ public class GameBoardView extends View {
     private Game game;
 
     private PadRaw[][][][] padRaw;
-    
+
     // view models
     private GameButton localGameBtn, friendGameBtn, onlineGameBtn, howToPlayBtn;
     private GameButton rematchBtn, goBackBtn;
@@ -397,9 +397,9 @@ public class GameBoardView extends View {
         canvas.drawText(str, (howToPlayBtn.getLeft() + howToPlayBtn.getWidth() / 2) - textWidth / 2, howToPlayBtn.getRect().bottom - howToPlayBtn.getHeight() / 2 + measureTextHeight(str) / 2, textPaint);
     }
 
-    private int measureTextHeight(String str){
+    private int measureTextHeight(String str) {
         Rect rectBound = new Rect();
-        textPaint.getTextBounds(str,0,str.length(),rectBound);
+        textPaint.getTextBounds(str, 0, str.length(), rectBound);
 
         return rectBound.height();
     }
@@ -853,13 +853,13 @@ public class GameBoardView extends View {
         gameBoardAnimation.start();
     }
 
-    private void animateTurn(){
+    private void animateTurn() {
         float activeTurnWidthRatio = ACTIVE_TURN_WIDTH_RATIO; // from 0.3f
         float inActiveTurnWidthRatio = INACTIVE_TURN_WIDTH_RATIO; // to 0.1f
         float drawTurnWidthRatio = DRAW_TURN_WIDTH_RATIO; // to 0.2f
 
         ValueAnimator turnAnimation;
-        if (game.getGameStatus() == Game.GameStatus.COMPLETED && game.getGameWinner() == Game.GameWinner.NONE){
+        if (game.getGameStatus() == Game.GameStatus.COMPLETED && game.getGameWinner() == Game.GameWinner.NONE) {
             // animate switch turn for draw case
             turnAnimation = game.getGameTurn() == Game.GameTurn.PLAYER1 ? ValueAnimator.ofFloat(inActiveTurnWidthRatio, drawTurnWidthRatio) : ValueAnimator.ofFloat(activeTurnWidthRatio, drawTurnWidthRatio);
         } else {
@@ -880,7 +880,6 @@ public class GameBoardView extends View {
         turnAnimation.start();
 
     }
-
 
     private void sendGameStatuses() {
         Hashtable hashtable = new Hashtable();
@@ -1038,7 +1037,7 @@ public class GameBoardView extends View {
                 gameBoardV.getGamePadVs()[k][l].setIsAnimating(true);
                 Log.d("huhuhu", "huhuhu:: gameBoardV.getGamePadVs()[k][l].setIsAnimating is true, active case");
 
-            } else if ((i == k && j == l)){
+            } else if ((i == k && j == l)) {
                 gameBoardV.getGamePadVs()[k][l].setIsAnimating(false);
             }
 
