@@ -93,17 +93,17 @@ public class GameBoardView extends View {
     public void init() {
         density = context.getResources().getDisplayMetrics().density;
         mainPaint = new Paint();
-        mainPaint.setColor(context.getResources().getColor(R.color.T9BlueLight));
+        mainPaint.setColor(context.getResources().getColor(R.color.T9OrangeDark));
         mainPaint.setStrokeWidth(12.0f);
         mainPaint.setTextSize(36.0f);
 
         highlightPaint = new Paint();
-        highlightPaint.setColor(context.getResources().getColor(R.color.T9Red));
+        highlightPaint.setColor(context.getResources().getColor(R.color.T9BlueLight));
         highlightPaint.setStrokeWidth(12.0f);
         highlightPaint.setTextSize(36.0f);
 
         unHighlightPaint = new Paint();
-        unHighlightPaint.setColor(context.getResources().getColor(R.color.T9BlueLight));
+        unHighlightPaint.setColor(context.getResources().getColor(R.color.T9OrangeDark));
         unHighlightPaint.setStrokeWidth(12.0f);
         unHighlightPaint.setTextSize(36.0f);
 
@@ -809,8 +809,8 @@ public class GameBoardView extends View {
     }
 
     private void animateButtonColor(final boolean isHighlighted, final GameButton btn) {
-        final int colorFrom = getResources().getColor(R.color.T9BlueLight);
-        int colorTo = getResources().getColor(R.color.T9Red);
+        final int colorFrom = getResources().getColor(R.color.T9OrangeDark);
+        int colorTo = getResources().getColor(R.color.T9BlueLight);
         int colorTo2 = getResources().getColor(R.color.T9MiddleStatusBar);
 
         ValueAnimator colorAnimation = isHighlighted ? ValueAnimator.ofObject(new ArgbEvaluator(), colorFrom, colorTo) : ValueAnimator.ofObject(new ArgbEvaluator(), colorTo, colorTo2);

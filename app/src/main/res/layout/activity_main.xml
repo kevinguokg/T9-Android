@@ -2,7 +2,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#00aaee"
+    android:background="#EB7913"
     tools:context="com.kevinguo.t9.MainActivity">
 
     <com.kevinguo.t9.views.GameBoardView

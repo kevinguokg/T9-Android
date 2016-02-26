@@ -7,7 +7,10 @@
     <color name="black_overlay">#66000000</color>
 
     <color name="T9BlueLight">#5BC0DE</color>
+    <color name="T9Orange">#EB7913</color>
+    <color name="T9OrangeDark">#BD610F</color>
     <color name="T9Red">#FF5500</color>
+    <color name="T9RedHighlight">#FF5500</color>
     <color name="T9White">#FFFFFF</color>
     <color name="T9Gray1">#30EAEAEA</color>
     <color name="T9Player1">#9048ABE1</color>
