@@ -1,7 +1,6 @@
 package com.kevinguo.t9.views;
 
 import android.animation.ArgbEvaluator;
-import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
 import android.app.AlertDialog;
 import android.content.ClipData;
@@ -9,16 +8,12 @@ import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.Paint;
-import android.graphics.PorterDuff;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
-import android.view.SurfaceHolder;
-import android.view.SurfaceView;
 import android.view.View;
 import android.view.animation.DecelerateInterpolator;
 import android.widget.Toast;
@@ -37,9 +32,6 @@ import com.kevinguo.t9.models.Pad;
 import com.kevinguo.t9.models.PadRaw;
 import com.kevinguo.t9.utils.TypeFaces;
 
-import org.json.JSONException;
-import org.json.JSONObject;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Hashtable;
@@ -54,7 +46,7 @@ public class GameBoardView extends View {
 
     private RectF rectFPad;
     private RectF rectFCell;
-    private RectF player1TurnRect, player2TurnRect, middlePannelRect;
+    private RectF player1TurnRect, player2TurnRect, middlePanelRect;
     private Context context;
     private float density;
     private List<GameButton> buttonList;
@@ -78,9 +70,7 @@ public class GameBoardView extends View {
     private Game game;
 
     private PadRaw[][][][] padRaw;
-
-    private HashMap<String, Object> hashGameBoard;
-
+    
     // view models
     private GameButton localGameBtn, friendGameBtn, onlineGameBtn, howToPlayBtn;
     private GameButton rematchBtn, goBackBtn;
@@ -175,7 +165,7 @@ public class GameBoardView extends View {
         rectFCell = new RectF();
         player1TurnRect = new RectF();
         player2TurnRect = new RectF();
-        middlePannelRect = new RectF();
+        middlePanelRect = new RectF();
 
         // creates demo game
         game = new Game(Game.GameType.DEMO);
@@ -300,11 +290,11 @@ public class GameBoardView extends View {
         canvas.drawRect(player1TurnRect, player1TurnPaint);
 
         // draw middle bar
-        middlePannelRect.set(player1BarWidth, 0.0f, player1BarWidth + middleBarWidth, barHeight);
-        canvas.drawRect(middlePannelRect, middlePannelPaint);
+        middlePanelRect.set(player1BarWidth, 0.0f, player1BarWidth + middleBarWidth, barHeight);
+        canvas.drawRect(middlePanelRect, middlePannelPaint);
 
         float textWidth = textPaint.measureText(gameResultStr);
-        canvas.drawText(gameResultStr, (middlePannelRect.left + middleBarWidth / 2) - textWidth / 2, middlePannelRect.bottom - barHeight / 2 + measureTextHeight(gameResultStr) / 2, textPaint);
+        canvas.drawText(gameResultStr, (middlePanelRect.left + middleBarWidth / 2) - textWidth / 2, middlePanelRect.bottom - barHeight / 2 + measureTextHeight(gameResultStr) / 2, textPaint);
 
         // draw player 2 turn bar
         player2TurnRect.set(player1BarWidth + middleBarWidth, 0.0f, canvas.getWidth(), barHeight);
@@ -330,23 +320,23 @@ public class GameBoardView extends View {
         // rematch button
         rematchBtn.setRect(left, top, right, bottom);
         rematchBtn.setIsHidden(false);
-        canvas.drawRoundRect(rematchBtn.rect, 20f, 20f, rematchBtn.isTouched() ? highlightPaint : mainPaint);
+        canvas.drawRoundRect(rematchBtn.getRect(), 20f, 20f, rematchBtn.isTouched() ? highlightPaint : mainPaint);
         String str = context.getResources().getString(R.string.rematch_btn_text);
         rematchBtn.setButtonText(str);
         float textWidth = textPaint.measureText(str);
-        canvas.drawText(str, (rematchBtn.left + rematchBtn.getWidth() / 2) - textWidth / 2, rematchBtn.rect.bottom - rematchBtn.height / 2 + measureTextHeight(str) / 2, textPaint);
+        canvas.drawText(str, (rematchBtn.getLeft() + rematchBtn.getWidth() / 2) - textWidth / 2, rematchBtn.getRect().bottom - rematchBtn.getHeight() / 2 + measureTextHeight(str) / 2, textPaint);
 
         // go back button
         left = right + left;
         right = left + buttonWidth;
         goBackBtn.setRect(left, top, right, bottom);
         goBackBtn.setIsHidden(false);
-        canvas.drawRoundRect(goBackBtn.rect, 20f, 20f, goBackBtn.isTouched() ? highlightPaint : mainPaint);
+        canvas.drawRoundRect(goBackBtn.getRect(), 20f, 20f, goBackBtn.isTouched() ? highlightPaint : mainPaint);
 
         str = context.getResources().getString(R.string.go_back_btn_text);
         goBackBtn.setButtonText(str);
         textWidth = textPaint.measureText(str);
-        canvas.drawText(str, (goBackBtn.left + goBackBtn.getWidth() / 2) - textWidth / 2, goBackBtn.rect.bottom - goBackBtn.height / 2 + measureTextHeight(str) / 2, textPaint);
+        canvas.drawText(str, (goBackBtn.getLeft() + goBackBtn.getWidth() / 2) - textWidth / 2, goBackBtn.getRect().bottom - goBackBtn.getHeight() / 2 + measureTextHeight(str) / 2, textPaint);
     }
 
     private void drawDemoButtons(Canvas canvas) {
@@ -364,47 +354,47 @@ public class GameBoardView extends View {
         // local game button
         localGameBtn.setRect(left, top, right, bottom);
         localGameBtn.setIsHidden(false);
-        canvas.drawRoundRect(localGameBtn.rect, 20f, 20f, localGameBtn.isTouched() || localGameBtn.isAnimating() ? highlightPaint : mainPaint);
+        canvas.drawRoundRect(localGameBtn.getRect(), 20f, 20f, localGameBtn.isTouched() || localGameBtn.isAnimating() ? highlightPaint : mainPaint);
         String str = context.getResources().getString(R.string.local_game_btn_text);
         localGameBtn.setButtonText(str);
         float textWidth = textPaint.measureText(str);
-        canvas.drawText(str, (localGameBtn.left + localGameBtn.getWidth() / 2) - textWidth / 2, localGameBtn.rect.bottom - localGameBtn.height / 2 + measureTextHeight(str) / 2, textPaint);
+        canvas.drawText(str, (localGameBtn.getLeft() + localGameBtn.getWidth() / 2) - textWidth / 2, localGameBtn.getRect().bottom - localGameBtn.getHeight() / 2 + measureTextHeight(str) / 2, textPaint);
 
         // friend game button
-        top = localGameBtn.bottom + (int) (context.getResources().getDimension(R.dimen.space_medium));
+        top = localGameBtn.getBottom() + (int) (context.getResources().getDimension(R.dimen.space_medium));
         bottom = top + buttonHeight;
         friendGameBtn.setRect(left, top, right, bottom);
         friendGameBtn.setIsHidden(false);
-        canvas.drawRoundRect(friendGameBtn.rect, 20f, 20f, friendGameBtn.isTouched() || friendGameBtn.isAnimating() ? highlightPaint : mainPaint);
+        canvas.drawRoundRect(friendGameBtn.getRect(), 20f, 20f, friendGameBtn.isTouched() || friendGameBtn.isAnimating() ? highlightPaint : mainPaint);
 
         str = context.getResources().getString(R.string.friend_game_btn_text);
         friendGameBtn.setButtonText(str);
         textWidth = textPaint.measureText(str);
-        canvas.drawText(str, (friendGameBtn.left + friendGameBtn.getWidth() / 2) - textWidth / 2, friendGameBtn.rect.bottom - friendGameBtn.height / 2 + measureTextHeight(str) / 2, textPaint);
+        canvas.drawText(str, (friendGameBtn.getLeft() + friendGameBtn.getWidth() / 2) - textWidth / 2, friendGameBtn.getRect().bottom - friendGameBtn.getHeight() / 2 + measureTextHeight(str) / 2, textPaint);
 
         // online game button
-        top = friendGameBtn.bottom + (int) (context.getResources().getDimension(R.dimen.space_medium));
+        top = friendGameBtn.getBottom() + (int) (context.getResources().getDimension(R.dimen.space_medium));
         bottom = top + buttonHeight;
         onlineGameBtn.setRect(left, top, right, bottom);
         onlineGameBtn.setIsHidden(false);
-        canvas.drawRoundRect(onlineGameBtn.rect, 20f, 20f, onlineGameBtn.isTouched() || onlineGameBtn.isAnimating() ? highlightPaint : mainPaint);
+        canvas.drawRoundRect(onlineGameBtn.getRect(), 20f, 20f, onlineGameBtn.isTouched() || onlineGameBtn.isAnimating() ? highlightPaint : mainPaint);
 
         str = context.getResources().getString(R.string.online_game_btn_text);
         onlineGameBtn.setButtonText(str);
         textWidth = textPaint.measureText(str);
-        canvas.drawText(str, (onlineGameBtn.left + onlineGameBtn.getWidth() / 2) - textWidth / 2, onlineGameBtn.rect.bottom - onlineGameBtn.height / 2 + measureTextHeight(str) / 2, textPaint);
+        canvas.drawText(str, (onlineGameBtn.getLeft() + onlineGameBtn.getWidth() / 2) - textWidth / 2, onlineGameBtn.getRect().bottom - onlineGameBtn.getHeight() / 2 + measureTextHeight(str) / 2, textPaint);
 
         // how to play game button
-        top = onlineGameBtn.bottom + (int) (context.getResources().getDimension(R.dimen.space_medium));
+        top = onlineGameBtn.getBottom() + (int) (context.getResources().getDimension(R.dimen.space_medium));
         bottom = top + buttonHeight;
         howToPlayBtn.setRect(left, top, right, bottom);
         howToPlayBtn.setIsHidden(false);
-        canvas.drawRoundRect(howToPlayBtn.rect, 20f, 20f, howToPlayBtn.isTouched() || howToPlayBtn.isAnimating() ? highlightPaint : mainPaint);
+        canvas.drawRoundRect(howToPlayBtn.getRect(), 20f, 20f, howToPlayBtn.isTouched() || howToPlayBtn.isAnimating() ? highlightPaint : mainPaint);
 
         str = context.getResources().getString(R.string.how_to_play_btn_text);
         howToPlayBtn.setButtonText(str);
         textWidth = textPaint.measureText(str);
-        canvas.drawText(str, (howToPlayBtn.left + howToPlayBtn.getWidth() / 2) - textWidth / 2, howToPlayBtn.rect.bottom - howToPlayBtn.height / 2 + measureTextHeight(str) / 2, textPaint);
+        canvas.drawText(str, (howToPlayBtn.getLeft() + howToPlayBtn.getWidth() / 2) - textWidth / 2, howToPlayBtn.getRect().bottom - howToPlayBtn.getHeight() / 2 + measureTextHeight(str) / 2, textPaint);
     }
 
     private int measureTextHeight(String str){
@@ -437,7 +427,7 @@ public class GameBoardView extends View {
         if (pad.getPadStatus() == Pad.PadStatus.ACTIVE) {
             float normalPadWidth = padWidth;
 
-            if (gameBoardV.gamePadVs[pad.getRow()][pad.getCol()].isAnimating())
+            if (gameBoardV.getGamePadVs()[pad.getRow()][pad.getCol()].isAnimating())
                 padWidth *= activePadWidthRatio;
             else {
                 padWidth *= ACTIVE_PAD_WIDTH_RATIO;
@@ -450,7 +440,7 @@ public class GameBoardView extends View {
         } else if (pad.getPadStatus() == Pad.PadStatus.INACTIVE) {
             float normalPadWidth = padWidth;
 
-            if (gameBoardV.gamePadVs[pad.getRow()][pad.getCol()].isAnimating())
+            if (gameBoardV.getGamePadVs()[pad.getRow()][pad.getCol()].isAnimating())
                 padWidth *= inactivePadWidthRatio;
             else {
                 padWidth *= INACTIVE_PAD_WIDTH_RATIO;
@@ -476,8 +466,8 @@ public class GameBoardView extends View {
         canvas.drawRect(rectFPad, padPaint);
 
         // needs to memorize this
-        gameBoardV.gamePadVs[pad.getRow()][pad.getCol()].setRectF(rectFPad);
-        GamePadV padView = gameBoardV.gamePadVs[pad.getRow()][pad.getCol()];
+        gameBoardV.getGamePadVs()[pad.getRow()][pad.getCol()].setRectF(rectFPad);
+        GamePadV padView = gameBoardV.getGamePadVs()[pad.getRow()][pad.getCol()];
 
         for (Cell[] cells : pad.getCells()) {
             for (Cell singleCell : cells) {
@@ -489,10 +479,10 @@ public class GameBoardView extends View {
     private void drawCell(Canvas canvas, GamePadV padView, Cell cell) {
         float padInnerPadding = context.getResources().getDimension(R.dimen.space_micro);
         float interCellPadding = context.getResources().getDimension(R.dimen.space_tiny);
-        float cellWidth = (padView.rectF.width() - padInnerPadding * 2 - interCellPadding * 2) / 3;
+        float cellWidth = (padView.getRectF().width() - padInnerPadding * 2 - interCellPadding * 2) / 3;
 
-        float cellLeft = (cell.getCol() == 0) ? padView.rectF.left + padInnerPadding : padView.rectF.left + padInnerPadding + cell.getCol() * cellWidth + cell.getCol() * interCellPadding;
-        float cellTop = (cell.getRow() == 0) ? padView.rectF.top + padInnerPadding : padView.rectF.top + padInnerPadding + cell.getRow() * cellWidth + cell.getRow() * interCellPadding;
+        float cellLeft = (cell.getCol() == 0) ? padView.getRectF().left + padInnerPadding : padView.getRectF().left + padInnerPadding + cell.getCol() * cellWidth + cell.getCol() * interCellPadding;
+        float cellTop = (cell.getRow() == 0) ? padView.getRectF().top + padInnerPadding : padView.getRectF().top + padInnerPadding + cell.getRow() * cellWidth + cell.getRow() * interCellPadding;
 
         rectFCell.set(cellLeft, cellTop, cellLeft + cellWidth, cellTop + cellWidth);
 
@@ -505,11 +495,7 @@ public class GameBoardView extends View {
         }
         canvas.drawRect(rectFCell, cellPaint);
 
-        padView.gameCells[cell.getRow()][cell.getCol()].setRectF(rectFCell);
-    }
-
-    private void drawSmallBoard(Canvas canvas) {
-
+        padView.getGameCells()[cell.getRow()][cell.getCol()].setRectF(rectFCell);
     }
 
     @Override
@@ -531,7 +517,7 @@ public class GameBoardView extends View {
                 if (btn.isHidden())
                     continue;
 
-                if (btn.rect.contains(touchX, touchY) && touchedButton == btn) {
+                if (btn.getRect().contains(touchX, touchY) && touchedButton == btn) {
                     Log.d("hihihi", "a btn is pressed type " + btn.getButtonText() + " hidden? " + btn.isHidden());
 //                    Toast.makeText(context, "button " + btn.getButtonText() + " touched", Toast.LENGTH_SHORT).show();
 
@@ -727,8 +713,8 @@ public class GameBoardView extends View {
                         for (int j = 0; j < 3; j++) {
                             for (int k = 0; k < 3; k++) {
                                 for (int l = 0; l < 3; l++) {
-                                    GameCell thisCell = gameBoardV.gamePadVs[i][j].gameCells[k][l];
-                                    if (thisCell.rectF.contains(touchX, touchY)) {
+                                    GameCell thisCell = gameBoardV.getGamePadVs()[i][j].getGameCells()[k][l];
+                                    if (thisCell.getRectF().contains(touchX, touchY)) {
                                         boolean shouldInvalidate = false;
                                         //Toast.makeText(context, "pad[" + i + "][" + j + "], cell[" + k + "][" + l + "] is clicked!", Toast.LENGTH_SHORT).show();
 
@@ -751,7 +737,6 @@ public class GameBoardView extends View {
                                                 shouldInvalidate = true;
                                             }
 
-//                                            invalidate();
                                         } else if (game.getGameType() == Game.GameType.FRIENDS || game.getGameType() == Game.GameType.ONLINE) {
                                             if (game.getGameStatus() != Game.GameStatus.ABORTED && game.getGameTurn() == game.getGameHostTurn() && padRaw[i][j][k][l].getOwnBy() == 0 && padRaw[i][j][0][0].getPadActive() == 1) {
                                                 padRaw[i][j][k][l].setOwnBy(game.getGameTurn() == Game.GameTurn.PLAYER1 ? 1 : -1);
@@ -772,7 +757,6 @@ public class GameBoardView extends View {
 
                                         if (shouldInvalidate)
                                             animateGameBoardPerTurn();
-                                        //invalidate();
                                     }
                                 }
                             }
@@ -782,23 +766,18 @@ public class GameBoardView extends View {
             }
         } else if (event.getAction() == MotionEvent.ACTION_MOVE) {
             boolean shouldInvalidate = false;
-            boolean isHighlight = false;
-            GameButton deHighLightBtn = null;
             for (GameButton btn : buttonList) {
                 if (btn.isHidden())
                     continue;
-                if (btn.rect.contains(touchX, touchY)) {
+                if (btn.getRect().contains(touchX, touchY)) {
                     if (!btn.isTouched() && touchedButton == btn) {
                         btn.setIsTouched(true);
                         btn.setIsAnimating(true);
-                        isHighlight = true;
                         shouldInvalidate = true;
                     }
                 } else if (btn.isTouched()) {
                     btn.setIsTouched(false);
                     btn.setIsAnimating(false);
-                    deHighLightBtn = btn;
-                    isHighlight = false;
                     shouldInvalidate = true;
                 } else {
                     btn.setIsTouched(false);
@@ -808,7 +787,6 @@ public class GameBoardView extends View {
 
             if (shouldInvalidate) {
                 invalidate();
-//                animateButtonColor(isHighlight, deHighLightBtn);
             }
 
         } else if (event.getAction() == MotionEvent.ACTION_DOWN) {
@@ -817,7 +795,7 @@ public class GameBoardView extends View {
             for (GameButton btn : buttonList) {
                 if (btn.isHidden())
                     continue;
-                if (btn.rect.contains(touchX, touchY)) {
+                if (btn.getRect().contains(touchX, touchY)) {
                     btn.setIsTouched(true);
                     btn.setIsAnimating(true);
                     touchedButton = btn;
@@ -977,8 +955,8 @@ public class GameBoardView extends View {
                                                 padRaw[i][j][k][l].setSymbol((String) thatCell.get("symbol"));
                                                 padRaw[i][j][k][l].setPadActive(((Long) thatCell.get("padActive")).intValue());
 
-                                                gameBoardV.gamePadVs[i][j].setPadStatus(((Long) thatCell.get("padActive")).intValue() == 1 ? Pad.PadStatus.ACTIVE : Pad.PadStatus.INACTIVE);
-                                                gameBoardV.gamePadVs[i][j].gameCells[k][l].setCellStatus(((Long) thatCell.get("ownBy")).intValue() == 0 ? Cell.CellStatus.EMPTY : ((Long) thatCell.get("ownBy")).intValue() == 1 ? Cell.CellStatus.PLAYER1 : Cell.CellStatus.PLAYER2);
+                                                gameBoardV.getGamePadVs()[i][j].setPadStatus(((Long) thatCell.get("padActive")).intValue() == 1 ? Pad.PadStatus.ACTIVE : Pad.PadStatus.INACTIVE);
+                                                gameBoardV.getGamePadVs()[i][j].getGameCells()[k][l].setCellStatus(((Long) thatCell.get("ownBy")).intValue() == 0 ? Cell.CellStatus.EMPTY : ((Long) thatCell.get("ownBy")).intValue() == 1 ? Cell.CellStatus.PLAYER1 : Cell.CellStatus.PLAYER2);
 
 
                                             }
@@ -992,7 +970,7 @@ public class GameBoardView extends View {
                                         //if (((Long) thatCell.get("padActive")).intValue() != padRaw[i][j][0][0].getPadActive()){
                                         // set active
                                         game.getGameBoard().getPads()[i][j].setPadStatus(((Long) thatCell.get("padActive")).intValue() == 1 ? Pad.PadStatus.ACTIVE : Pad.PadStatus.INACTIVE);
-                                        gameBoardV.gamePadVs[i][j].setPadStatus(((Long) thatCell.get("padActive")).intValue() == 1 ? Pad.PadStatus.ACTIVE : Pad.PadStatus.INACTIVE);
+                                        gameBoardV.getGamePadVs()[i][j].setPadStatus(((Long) thatCell.get("padActive")).intValue() == 1 ? Pad.PadStatus.ACTIVE : Pad.PadStatus.INACTIVE);
                                         //}
                                     }
                                 }
@@ -1054,22 +1032,22 @@ public class GameBoardView extends View {
             if (game.getGameBoard().getPads()[k][l].getPadStatus() != Pad.PadStatus.ACTIVE)
                 game.getGameBoard().getPads()[k][l].setPadStatus(Pad.PadStatus.ACTIVE);
 
-            if (gameBoardV.gamePadVs[k][l].getPadStatus() != Pad.PadStatus.ACTIVE) {
-                Log.d("huhuhu", "huhuhu:: gameBoardV.gamePadVs[k][l].getPadStatus() is " + gameBoardV.gamePadVs[k][l].getPadStatus());
-                gameBoardV.gamePadVs[k][l].setPadStatus(Pad.PadStatus.ACTIVE);
-                gameBoardV.gamePadVs[k][l].setIsAnimating(true);
-                Log.d("huhuhu", "huhuhu:: gameBoardV.gamePadVs[k][l].setIsAnimating is true, active case");
+            if (gameBoardV.getGamePadVs()[k][l].getPadStatus() != Pad.PadStatus.ACTIVE) {
+                Log.d("huhuhu", "huhuhu:: gameBoardV.getGamePadVs()[k][l].getPadStatus() is " + gameBoardV.getGamePadVs()[k][l].getPadStatus());
+                gameBoardV.getGamePadVs()[k][l].setPadStatus(Pad.PadStatus.ACTIVE);
+                gameBoardV.getGamePadVs()[k][l].setIsAnimating(true);
+                Log.d("huhuhu", "huhuhu:: gameBoardV.getGamePadVs()[k][l].setIsAnimating is true, active case");
 
             } else if ((i == k && j == l)){
-                gameBoardV.gamePadVs[k][l].setIsAnimating(false);
+                gameBoardV.getGamePadVs()[k][l].setIsAnimating(false);
             }
 
             if (isPadFull(k, l)) {
                 for (int a = 0; a < 3; a++) {
                     for (int b = 0; b < 3; b++) {
                         game.getGameBoard().getPads()[a][b].setPadStatus(Pad.PadStatus.ACTIVE);
-                        gameBoardV.gamePadVs[a][b].setPadStatus(Pad.PadStatus.ACTIVE);
-                        gameBoardV.gamePadVs[a][b].setIsAnimating(true);
+                        gameBoardV.getGamePadVs()[a][b].setPadStatus(Pad.PadStatus.ACTIVE);
+                        gameBoardV.getGamePadVs()[a][b].setIsAnimating(true);
                     }
                 }
 
@@ -1082,12 +1060,12 @@ public class GameBoardView extends View {
                         if (game.getGameBoard().getPads()[a][b].getPadStatus() != Pad.PadStatus.INACTIVE) {
                             game.getGameBoard().getPads()[a][b].setPadStatus(Pad.PadStatus.INACTIVE);
                         }
-                        if (gameBoardV.gamePadVs[a][b].getPadStatus() != Pad.PadStatus.INACTIVE) {
-                            gameBoardV.gamePadVs[a][b].setPadStatus(Pad.PadStatus.INACTIVE);
-                            gameBoardV.gamePadVs[a][b].setIsAnimating(true);
-                            Log.d("huhuhu", "huhuhu:: gameBoardV.gamePadVs[k][l].setIsAnimating is true, inactive case");
+                        if (gameBoardV.getGamePadVs()[a][b].getPadStatus() != Pad.PadStatus.INACTIVE) {
+                            gameBoardV.getGamePadVs()[a][b].setPadStatus(Pad.PadStatus.INACTIVE);
+                            gameBoardV.getGamePadVs()[a][b].setIsAnimating(true);
+                            Log.d("huhuhu", "huhuhu:: gameBoardV.getGamePadVs()[k][l].setIsAnimating is true, inactive case");
                         } else {
-                            gameBoardV.gamePadVs[a][b].setIsAnimating(false);
+                            gameBoardV.getGamePadVs()[a][b].setIsAnimating(false);
                         }
                     }
                 }
@@ -1276,186 +1254,4 @@ public class GameBoardView extends View {
         return Pad.PadWinner.NONE;
     }
 
-    private class GameButton {
-        private RectF rect;
-        private int top, left, right, bottom, width, height;
-        private boolean isTouched = false;
-        private boolean isAnimating = false;
-        private boolean isHidden;
-        private String buttonText;
-
-        public GameButton() {
-            rect = new RectF();
-            isHidden = true;
-        }
-
-        public void setIsHidden(boolean isHidden) {
-            this.isHidden = isHidden;
-        }
-
-        public boolean isHidden() {
-            return isHidden;
-        }
-
-        public GameButton(int left, int top, int right, int bottom) {
-            rect = new RectF();
-            this.top = top;
-            this.left = left;
-            this.right = right;
-            this.bottom = bottom;
-            rect.set(left, top, right, bottom);
-
-            this.width = right - left;
-            this.height = bottom - top;
-        }
-
-        public GameButton(RectF rect) {
-            this.rect = rect;
-        }
-
-        public void setRect(int left, int top, int right, int bottom) {
-            this.top = top;
-            this.left = left;
-            this.right = right;
-            this.bottom = bottom;
-            rect.set(left, top, right, bottom);
-
-            this.width = right - left;
-            this.height = bottom - top;
-        }
-
-        public int getWidth() {
-            return this.width;
-        }
-
-        public void setIsTouched(boolean isTouched) {
-            this.isTouched = isTouched;
-        }
-
-        public boolean isTouched() {
-            return this.isTouched;
-        }
-
-        public boolean isAnimating() {
-            return isAnimating;
-        }
-
-        public void setIsAnimating(boolean isAnimating) {
-            this.isAnimating = isAnimating;
-        }
-
-        public void setButtonText(String buttonText) {
-            this.buttonText = buttonText;
-        }
-
-        public String getButtonText() {
-            return this.buttonText;
-        }
-    }
-
-    private class GameBoardV {
-        private RectF rectF;
-        private GamePadV[][] gamePadVs;
-
-        public GameBoardV() {
-
-            // instantiates view models
-            this.gamePadVs = new GamePadV[3][3];
-
-            // this would work
-            for (int i = 0; i < 3; i++) {
-                for (int j = 0; j < 3; j++) {
-                    gamePadVs[i][j] = new GamePadV();
-                }
-            }
-        }
-
-        public void setDemoBoardV() {
-            for (int i = 0; i < 3; i++) {
-                for (int j = 0; j < 3; j++) {
-                    //gamePadVs[i][j].g
-                }
-            }
-        }
-    }
-
-    private class GamePadV {
-        private RectF rectF;
-        private GameCell[][] gameCells;
-        private Pad.PadStatus padStatus;
-        private boolean isAnimating;
-
-
-        public GamePadV() {
-            gameCells = new GameCell[9][9];
-
-            for (int i = 0; i < 3; i++) {
-                for (int j = 0; j < 3; j++) {
-                    gameCells[i][j] = new GameCell();
-                }
-            }
-            setPadStatus(Pad.PadStatus.ACTIVE);
-            setIsAnimating(false);
-        }
-
-        public GamePadV(RectF rectF) {
-            this.rectF = rectF;
-        }
-
-        public GameCell[][] getGameCells() {
-            return gameCells;
-        }
-
-        public void setRectF(RectF rectF) {
-            this.rectF = rectF;
-        }
-
-        public void setGameCells(GameCell[][] gameCells) {
-            this.gameCells = gameCells;
-        }
-
-        public Pad.PadStatus getPadStatus() {
-            return padStatus;
-        }
-
-        public void setPadStatus(Pad.PadStatus padStatus) {
-            this.padStatus = padStatus;
-        }
-
-        public boolean isAnimating() {
-            return isAnimating;
-        }
-
-        public void setIsAnimating(boolean isAnimating) {
-            this.isAnimating = isAnimating;
-        }
-    }
-
-    private class GameCell {
-        private RectF rectF;
-        private Cell.CellStatus cellStatus;  //symbol
-
-
-        public GameCell() {
-            setCellStatus(Cell.CellStatus.EMPTY);
-        }
-
-        public GameCell(RectF rectF) {
-            this.rectF = rectF;
-        }
-
-        public void setRectF(RectF rectF) {
-//            Log.d("setRectF", "rectF (l,t,r,b): (" + rectF.left + ", " + rectF.top + ", " + rectF.right + ", " + rectF.bottom + "), (h,w): (" + rectF.height() + ", " + rectF.width() + ")");
-            this.rectF = new RectF(rectF);
-        }
-
-        public Cell.CellStatus getCellStatus() {
-            return cellStatus;
-        }
-
-        public void setCellStatus(Cell.CellStatus cellStatus) {
-            this.cellStatus = cellStatus;
-        }
-
-    }
 }
