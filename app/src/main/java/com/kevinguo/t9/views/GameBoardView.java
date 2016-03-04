@@ -31,6 +31,7 @@ import com.kevinguo.t9.R;
 import com.kevinguo.t9.models.Board;
 import com.kevinguo.t9.models.Cell;
 import com.kevinguo.t9.models.Game;
+import com.kevinguo.t9.models.GameScore;
 import com.kevinguo.t9.models.Pad;
 import com.kevinguo.t9.models.PadRaw;
 import com.kevinguo.t9.utils.TypeFaces;
@@ -45,7 +46,7 @@ import java.util.List;
  */
 public class GameBoardView extends View {
     // view models
-    private Paint mainPaint, highlightPaint, unHighlightPaint, textPaint, padPaint, cellPaint, player1TurnPaint, player2TurnPaint, middlePannelPaint;
+    private Paint mainPaint, highlightPaint, unHighlightPaint, textPaint, scorePaint, padPaint, cellPaint, player1TurnPaint, player2TurnPaint, middlePannelPaint;
     private android.text.TextPaint androidTextPaint;
 
     private RectF rectFPad;
@@ -61,7 +62,6 @@ public class GameBoardView extends View {
     private static final float INACTIVE_TURN_WIDTH_RATIO = 0.1f;
     private static final float DRAW_TURN_WIDTH_RATIO = 0.2f;
 
-
     private float inactivePadWidthRatio;
     private float activePadWidthRatio;
 
@@ -72,6 +72,7 @@ public class GameBoardView extends View {
 
     // data models
     private Game game;
+    private GameScore gameScore;
 
     private PadRaw[][][][] padRaw;
 
@@ -118,6 +119,12 @@ public class GameBoardView extends View {
         textPaint.setStrokeWidth(12.0f);
         textPaint.setTextSize(getResources().getDimension(R.dimen.font_large));
         textPaint.setTypeface(TypeFaces.get(context, "arcade_classic"));
+
+        scorePaint = new Paint();
+        scorePaint.setColor(context.getResources().getColor(R.color.T9White));
+        scorePaint.setStrokeWidth(12.0f);
+        scorePaint.setTextSize(getResources().getDimension(R.dimen.font_gitantic));
+        scorePaint.setTypeface(TypeFaces.get(context, "arcade_classic"));
 
         androidTextPaint = new TextPaint();
         androidTextPaint.setColor(context.getResources().getColor(R.color.T9White));
@@ -182,7 +189,7 @@ public class GameBoardView extends View {
         middlePanelRect = new RectF();
 
         // creates demo game
-        game = new Game(Game.GameType.DEMO);
+        createNewGame(Game.GameType.DEMO, true);
 
         gameBoardV = new GameBoardV();
 
@@ -247,6 +254,7 @@ public class GameBoardView extends View {
         drawDemoBoard(canvas);
         drawTurnBar(canvas);
         drawTutorialInstructions(canvas);
+        drawScoreBoard(canvas);
     }
 
     private void drawTurnBar(Canvas canvas) {
@@ -273,10 +281,15 @@ public class GameBoardView extends View {
                 gameResultStr = "Player " + (game.getGameWinner() == Game.GameWinner.PLAYER1 ? "1" : "2") + " is the winner!";
             }
         } else if (game.getGameStatus() == Game.GameStatus.ABORTED) {
-            player1BarWidth = canvas.getWidth() * 0.2f;
-            middleBarWidth = canvas.getWidth() * 0.6f;
-            player2BarWidth = canvas.getWidth() * 0.2f;
+            player1BarWidth = canvas.getWidth() * 0.0f;
+            middleBarWidth = canvas.getWidth();
+            player2BarWidth = canvas.getWidth() * 0.0f;
             gameResultStr = "Your opponent has left!";
+        } else if (game.getGameStatus() == Game.GameStatus.PENDING) {
+            player1BarWidth = canvas.getWidth() * 0.0f;
+            middleBarWidth = canvas.getWidth();
+            player2BarWidth = canvas.getWidth() * 0.0f;
+            gameResultStr = "Waiting for an opponent...";
         } else {
             if (game.getGameTurn() == Game.GameTurn.PLAYER1) {
                 // animating player1BarWidth between 0.3f and 0.1f
@@ -453,6 +466,38 @@ public class GameBoardView extends View {
         return rectBound.height();
     }
 
+    private void drawScoreBoard(Canvas canvas) {
+        if (game.getGameType() == Game.GameType.DEMO || game.getGameType() == Game.GameType.TUTORIAL)
+            return;
+
+        if (game.getGameStatus() == Game.GameStatus.PENDING)
+            return;
+
+        int left = (int) (canvas.getWidth() * 0.15);
+        float turnBarHeight = canvas.getHeight() * 0.05f;
+        int top = (int) turnBarHeight + (int) (context.getResources().getDimension(R.dimen.space_xlarge));
+
+        String gameScorePlayer1 = String.valueOf(gameScore.getGameScoreP1());
+        String gameScorePlayer2 = String.valueOf(gameScore.getGameScoreP2());
+        String gameScoreMiddle = ":";
+
+
+        Rect textBound = new Rect();
+        scorePaint.getTextBounds(gameScorePlayer1, 0, gameScorePlayer1.length(), textBound);
+        canvas.drawText(gameScorePlayer1, left, top + textBound.height(), scorePaint);
+
+        Rect textBoundMiddle = new Rect();
+        textPaint.getTextBounds(gameScoreMiddle, 0, gameScoreMiddle.length(), textBoundMiddle);
+        left = (int) (canvas.getWidth() * 0.5) - textBoundMiddle.width() / 2;
+        //top = textBound.bottom + textBound.height() / 2;
+        canvas.drawText(gameScoreMiddle, left, top + textBound.height() / 2, textPaint);
+
+        scorePaint.getTextBounds(gameScorePlayer2, 0, gameScorePlayer2.length(), textBound);
+        left = (int) (canvas.getWidth() * 0.85) - textBound.width();
+        canvas.drawText(gameScorePlayer2, left, top + textBound.height(), scorePaint);
+
+    }
+
     private void drawDemoBoard(Canvas canvas) {
         Board gameBoard = game.getGameBoard();
 
@@ -577,12 +622,8 @@ public class GameBoardView extends View {
                         if (btn.getButtonText().equals(local)) {
                             Log.d("hihihi", "local btn is pressed");
 
-                            game = new Game(Game.GameType.LOCAL);
-
-                            localGameBtn.setIsHidden(true);
-                            friendGameBtn.setIsHidden(true);
-                            onlineGameBtn.setIsHidden(true);
-                            howToPlayBtn.setIsHidden(true);
+                            createNewGame(Game.GameType.LOCAL, true);
+                            hideDemoButtons();
 
                             // start local game
                         } else if (btn.getButtonText().equals(friend)) {
@@ -596,11 +637,7 @@ public class GameBoardView extends View {
 
                             initInternetGame(Game.GameType.FRIENDS, Game.GameStatus.PENDING, Game.GameTurn.PLAYER1);
 
-                            localGameBtn.setIsHidden(true);
-                            friendGameBtn.setIsHidden(true);
-                            onlineGameBtn.setIsHidden(true);
-                            howToPlayBtn.setIsHidden(true);
-
+                            hideDemoButtons();
 
                         } else if (btn.getButtonText().equals(online)) {
                             Log.d("hihihi", "online btn is pressed");
@@ -695,13 +732,9 @@ public class GameBoardView extends View {
                             Log.d("hihihi", "hot to play btn is pressed");
 
                             // start how to play instructions
+                            createNewGame(Game.GameType.TUTORIAL, true);
 
-                            game = new Game(Game.GameType.TUTORIAL);
-
-                            localGameBtn.setIsHidden(true);
-                            friendGameBtn.setIsHidden(true);
-                            onlineGameBtn.setIsHidden(true);
-                            howToPlayBtn.setIsHidden(true);
+                            hideDemoButtons();
                         }
 
                     } else {
@@ -717,7 +750,7 @@ public class GameBoardView extends View {
                                             public void onClick(DialogInterface dialog, int which) {
 
                                                 if (game.getGameType() == Game.GameType.LOCAL) {
-                                                    game = new Game(Game.GameType.LOCAL);
+                                                    createNewGame(Game.GameType.LOCAL, false);
                                                     gameBoardV = new GameBoardV();
                                                     resetAnimatingItemDimenStatus();
                                                 } else if (game.getGameType() == Game.GameType.FRIENDS || game.getGameType() == Game.GameType.ONLINE) {
@@ -729,7 +762,7 @@ public class GameBoardView extends View {
                                                         myFirebaseRef.child("randomgames/" + roomNumber).updateChildren(hashtable);
                                                         isRematchRequester = true;
                                                     } else {
-                                                        game = new Game(game.getGameType() == Game.GameType.FRIENDS ? Game.GameType.FRIENDS : Game.GameType.ONLINE);
+                                                        createNewGame(game.getGameType() == Game.GameType.FRIENDS ? Game.GameType.FRIENDS : Game.GameType.ONLINE, false);
                                                         gameBoardV = new GameBoardV();
                                                         initPadRaw();
                                                         sendGameStatuses();
@@ -758,8 +791,7 @@ public class GameBoardView extends View {
                             }
 
                             // go back now
-                            game = new Game(Game.GameType.DEMO);
-
+                            createNewGame(Game.GameType.DEMO, true);
                             isGameHost = false;
 
                             rematchBtn.setIsHidden(true);
@@ -777,12 +809,11 @@ public class GameBoardView extends View {
 
             touchedButton = null;
 
-            if (game.getGameType() == Game.GameType.TUTORIAL){
+            if (game.getGameType() == Game.GameType.TUTORIAL) {
                 Log.d("hihihi", "go back to main page!");
 
                 // go back now
-                game = new Game(Game.GameType.DEMO);
-
+                createNewGame(Game.GameType.DEMO, true);
                 isGameHost = false;
                 resetAnimatingItemDimenStatus();
                 invalidate();
@@ -1004,15 +1035,11 @@ public class GameBoardView extends View {
                 if (firebaseError != null) {
                     Toast.makeText(context, "Error occurred when creating game.", Toast.LENGTH_LONG).show();
                 } else {
-
-                    game = new Game(gameType);
+                    createNewGame(gameType, true);
                     game.setGameHostTurn(hostGameTurn);
                     initPadRaw();
 
-                    localGameBtn.setIsHidden(true);
-                    friendGameBtn.setIsHidden(true);
-                    onlineGameBtn.setIsHidden(true);
-                    howToPlayBtn.setIsHidden(true);
+                    hideDemoButtons();
 
                     myFirebaseRef.child(gameModeUrl + roomNumber).addValueEventListener(new ValueEventListener() {
                         @Override
@@ -1132,7 +1159,7 @@ public class GameBoardView extends View {
                                             })
                                             .setIcon(android.R.drawable.ic_dialog_alert).create().show();
                                 } else if ((hashMap.get("restartRequest").toString().equals("1"))) {
-                                    game = new Game(game.getGameType() == Game.GameType.FRIENDS ? Game.GameType.FRIENDS : Game.GameType.ONLINE);
+                                    createNewGame(game.getGameType() == Game.GameType.FRIENDS ? Game.GameType.FRIENDS : Game.GameType.ONLINE, false);
                                     game.setGameHostTurn(isGameHost ? Game.GameTurn.PLAYER1 : Game.GameTurn.PLAYER2);
                                     gameBoardV = new GameBoardV();
                                     isRematchRequester = false;
@@ -1143,7 +1170,7 @@ public class GameBoardView extends View {
                                     if (game.getGameType() == Game.GameType.ONLINE)
                                         myFirebaseRef.child("randomgames/" + roomNumber).updateChildren(hashtable);
                                 } else if ((hashMap.get("restartRequest").toString().equals("2") && isRematchRequester)) {
-                                    game = new Game(game.getGameType() == Game.GameType.FRIENDS ? Game.GameType.FRIENDS : Game.GameType.ONLINE);
+                                    createNewGame(game.getGameType() == Game.GameType.FRIENDS ? Game.GameType.FRIENDS : Game.GameType.ONLINE, false);
                                     game.setGameHostTurn(isGameHost ? Game.GameTurn.PLAYER1 : Game.GameTurn.PLAYER2);
                                     gameBoardV = new GameBoardV();
                                     isRematchRequester = false;
@@ -1312,6 +1339,8 @@ public class GameBoardView extends View {
         if (gameWinner != Game.GameWinner.NONE) {
             // yay! win!
             game.setGameWinner(gameWinner);
+            gameScore.bumpGameScore(gameWinner);
+
         } else if (game.getTurnCount() == Game.MAX_TURN_COUNT - 1) {
             // oops, draw!
             game.declareDraw();
@@ -1406,6 +1435,20 @@ public class GameBoardView extends View {
         }
 
         return Pad.PadWinner.NONE;
+    }
+
+    private void createNewGame(Game.GameType gameType, boolean resetGameScore){
+        game = new Game(gameType);
+
+        if (resetGameScore)
+            gameScore = new GameScore();
+    }
+
+    private void hideDemoButtons(){
+        localGameBtn.setIsHidden(true);
+        friendGameBtn.setIsHidden(true);
+        onlineGameBtn.setIsHidden(true);
+        howToPlayBtn.setIsHidden(true);
     }
 
 }
