@@ -7,7 +7,7 @@ public class Game {
     public enum GameStatus {PENDING, STARTED, COMPLETED, ABORTED};
     public enum GameTurn {PLAYER1, PLAYER2};
     public enum GameWinner {NONE, PLAYER1, PLAYER2};
-    public enum GameType {DEMO, LOCAL, FRIENDS, ONLINE};
+    public enum GameType {DEMO, LOCAL, FRIENDS, ONLINE, TUTORIAL};
 
     public static final int MAX_TURN_COUNT = 81;
 

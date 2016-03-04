@@ -11,6 +11,9 @@ import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.RectF;
+import android.text.Layout;
+import android.text.StaticLayout;
+import android.text.TextPaint;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
@@ -43,6 +46,7 @@ import java.util.List;
 public class GameBoardView extends View {
     // view models
     private Paint mainPaint, highlightPaint, unHighlightPaint, textPaint, padPaint, cellPaint, player1TurnPaint, player2TurnPaint, middlePannelPaint;
+    private android.text.TextPaint androidTextPaint;
 
     private RectF rectFPad;
     private RectF rectFCell;
@@ -74,6 +78,7 @@ public class GameBoardView extends View {
     // view models
     private GameButton localGameBtn, friendGameBtn, onlineGameBtn, howToPlayBtn;
     private GameButton rematchBtn, goBackBtn;
+    private GameButton howToPlayBackBtn, hotToPlayNextBtn;
     private GameBoardV gameBoardV;
 
     // game properties
@@ -81,6 +86,7 @@ public class GameBoardView extends View {
     private GameButton touchedButton;
 
     private boolean isGameHost;
+    private boolean isRematchRequester;
 
     private GameTurnThread gameTurnThread, gameButtonThread;
 
@@ -112,6 +118,12 @@ public class GameBoardView extends View {
         textPaint.setStrokeWidth(12.0f);
         textPaint.setTextSize(getResources().getDimension(R.dimen.font_large));
         textPaint.setTypeface(TypeFaces.get(context, "arcade_classic"));
+
+        androidTextPaint = new TextPaint();
+        androidTextPaint.setColor(context.getResources().getColor(R.color.T9White));
+        androidTextPaint.setStrokeWidth(2.0f);
+        androidTextPaint.setTextSize(getResources().getDimension(R.dimen.font_medium));
+        androidTextPaint.setTypeface(TypeFaces.get(context, "arcade_classic"));
 
         padPaint = new Paint();
         padPaint.setStrokeWidth(1.0f);
@@ -151,6 +163,7 @@ public class GameBoardView extends View {
         howToPlayBtn = new GameButton();
         rematchBtn = new GameButton();
         goBackBtn = new GameButton();
+        howToPlayBackBtn = new GameButton();
 
         buttonList = new ArrayList<>();
         buttonList.add(localGameBtn);
@@ -159,6 +172,7 @@ public class GameBoardView extends View {
         buttonList.add(howToPlayBtn);
         buttonList.add(rematchBtn);
         buttonList.add(goBackBtn);
+        buttonList.add(howToPlayBackBtn);
 
 
         rectFPad = new RectF();
@@ -232,10 +246,11 @@ public class GameBoardView extends View {
         drawButtons(canvas);
         drawDemoBoard(canvas);
         drawTurnBar(canvas);
+        drawTutorialInstructions(canvas);
     }
 
     private void drawTurnBar(Canvas canvas) {
-        if (game.getGameType() == Game.GameType.DEMO)
+        if (game.getGameType() == Game.GameType.DEMO || game.getGameType() == Game.GameType.TUTORIAL)
             return;
 
         // get three bar measurements based on turn
@@ -264,8 +279,8 @@ public class GameBoardView extends View {
             gameResultStr = "Your opponent has left!";
         } else {
             if (game.getGameTurn() == Game.GameTurn.PLAYER1) {
-                // TODO animating player1BarWidth between 0.3f and 0.1f
-                player1BarWidth = canvas.getWidth() * 0.3f;
+                // animating player1BarWidth between 0.3f and 0.1f
+//                player1BarWidth = canvas.getWidth() * 0.3f;
                 player1BarWidth = canvas.getWidth() * animatingTurnWidthRatio;
                 middleBarWidth = canvas.getWidth() * 0.6f;
                 player2BarWidth = canvas.getWidth() * 0.1f;
@@ -302,9 +317,29 @@ public class GameBoardView extends View {
     private void drawButtons(Canvas canvas) {
         if (game.getGameType() == Game.GameType.DEMO)
             drawDemoButtons(canvas);
-        else {
+        else if (game.getGameType() == Game.GameType.TUTORIAL) {
+//            drawTutorialButtons(canvas);
+        } else {
             drawInGameButtons(canvas);
         }
+    }
+
+    private void drawTutorialButtons(Canvas canvas) {
+        int left = (int) (context.getResources().getDimension(R.dimen.space_large));
+        int buttonWidth = (canvas.getWidth() - 2 * left);
+        int buttonHeight = (int) (canvas.getHeight() * 0.2) / 4; // four menu buttons on bottom
+        int top = (int) (canvas.getHeight() * 0.75) + (buttonHeight + (int) (context.getResources().getDimension(R.dimen.space_medium))) * 3;
+
+        int right = left + buttonWidth;
+        int bottom = top + buttonHeight;
+
+        howToPlayBackBtn.setRect(left, top, right, bottom);
+        howToPlayBackBtn.setIsHidden(false);
+        canvas.drawRoundRect(howToPlayBackBtn.getRect(), 20f, 20f, howToPlayBackBtn.isTouched() || howToPlayBackBtn.isAnimating() ? highlightPaint : mainPaint);
+        String str = context.getResources().getString(R.string.go_back_btn_text);
+        howToPlayBackBtn.setButtonText(str);
+        float textWidth = textPaint.measureText(str);
+        canvas.drawText(str, (howToPlayBackBtn.getLeft() + howToPlayBackBtn.getWidth() / 2) - textWidth / 2, howToPlayBackBtn.getRect().bottom - howToPlayBackBtn.getHeight() / 2 + measureTextHeight(str) / 2, textPaint);
     }
 
     private void drawInGameButtons(Canvas canvas) {
@@ -393,6 +428,22 @@ public class GameBoardView extends View {
         howToPlayBtn.setButtonText(str);
         textWidth = textPaint.measureText(str);
         canvas.drawText(str, (howToPlayBtn.getLeft() + howToPlayBtn.getWidth() / 2) - textWidth / 2, howToPlayBtn.getRect().bottom - howToPlayBtn.getHeight() / 2 + measureTextHeight(str) / 2, textPaint);
+    }
+
+    private void drawTutorialInstructions(Canvas canvas) {
+        if (game.getGameType() == Game.GameType.TUTORIAL) {
+            int left = (int) (context.getResources().getDimension(R.dimen.space_medium));
+            int top = (int) gameBoardV.getGamePadVs()[2][0].getRectF().bottom + (int) (context.getResources().getDimension(R.dimen.space_large));
+            int buttonWidth = (canvas.getWidth() - 2 * left);
+            String str = "T9 is 9 normal games of Tic Tac Toe played simultaneously. The board is made up of 9 tiles, each of which contains 9 squares. Your move will dictate where your opponent can play however. So if you play your piece in the top right square of a tile, then your opponent must play their next piece in the top right tile. \n\n The first player to win 3 straight tiles in a row wins.";
+            //canvas.drawText(str, left, top, textPaint);
+
+            StaticLayout staticLayout = new StaticLayout(str, androidTextPaint, buttonWidth, Layout.Alignment.ALIGN_NORMAL, 1, 1, false);
+            canvas.save();
+            canvas.translate(left, top);
+            staticLayout.draw(canvas);
+            canvas.restore();
+        }
     }
 
     private int measureTextHeight(String str) {
@@ -538,8 +589,6 @@ public class GameBoardView extends View {
                             Log.d("hihihi", "friend btn is pressed");
 
                             // start friend game
-//                            Hashtable hashtable = new Hashtable();
-//                            hashtable.put("gameStatus", "pending");
 
                             do {
                                 roomNumber = (int) (Math.random() * 100000);
@@ -556,9 +605,7 @@ public class GameBoardView extends View {
                         } else if (btn.getButtonText().equals(online)) {
                             Log.d("hihihi", "online btn is pressed");
 
-
-                            // TODO look up waiting list, if there is one, grab that and start the game, if not, create a new one in waiting list
-
+                            // look up waiting list, if there is one, grab that and start the game, if not, create a new one in waiting list TODO
 
                             Query waitlistQuery = myFirebaseRef.child("randomgames/waitinglist").orderByValue();
 
@@ -575,13 +622,15 @@ public class GameBoardView extends View {
                                         } while (roomNumber == 0);
 
                                         myFirebaseRef.child("randomgames/waitinglist/" + roomNumber).setValue(roomNumber);
-                                        // TODO
+
+                                        // enters the onine game mode (as player 1), waiting for player2 to join
 
                                         //initInternetGame(Game.GameType.ONLINE, Game.GameStatus.PENDING, Game.GameTurn.PLAYER1);
+                                        initInternetGame(Game.GameType.ONLINE, Game.GameStatus.PENDING, Game.GameTurn.PLAYER1);
 
                                         isGameHost = true;
                                     } else {
-                                        // look for a room number to enter
+                                        // if waiting list has pending game, look for a room number to enter, say the first one on the list
                                         for (DataSnapshot child : dataSnapshot.getChildren()) {
                                             Log.d("hihihi", "child.getValue() =  " + child.getValue());
                                             roomNumber = ((Long) child.getValue()).intValue();
@@ -590,6 +639,7 @@ public class GameBoardView extends View {
 
                                         Log.d("hihihi", "onDataChange roomNumber set to " + roomNumber);
 
+                                        // removes this room from waiting list and enters the online game mode (as player 2)
                                         myFirebaseRef.child("randomgames/waitinglist/" + roomNumber).removeValue();
                                         initInternetGame(Game.GameType.ONLINE, Game.GameStatus.STARTED, Game.GameTurn.PLAYER2);
 
@@ -622,8 +672,7 @@ public class GameBoardView extends View {
                                 public void onChildRemoved(DataSnapshot dataSnapshot) {
                                     Log.d("hihihi", "onChildRemoved " + dataSnapshot.getValue());
 
-                                    // need to tell which one is the P1, the holder
-
+                                    // need to compare if the room number matches with the one P1 has, if yes, start the game
                                     if (((Long) dataSnapshot.getValue()).intValue() == roomNumber && isGameHost)
                                         initInternetGame(Game.GameType.ONLINE, Game.GameStatus.STARTED, Game.GameTurn.PLAYER1);
                                 }
@@ -647,6 +696,12 @@ public class GameBoardView extends View {
 
                             // start how to play instructions
 
+                            game = new Game(Game.GameType.TUTORIAL);
+
+                            localGameBtn.setIsHidden(true);
+                            friendGameBtn.setIsHidden(true);
+                            onlineGameBtn.setIsHidden(true);
+                            howToPlayBtn.setIsHidden(true);
                         }
 
                     } else {
@@ -664,11 +719,21 @@ public class GameBoardView extends View {
                                                 if (game.getGameType() == Game.GameType.LOCAL) {
                                                     game = new Game(Game.GameType.LOCAL);
                                                     gameBoardV = new GameBoardV();
+                                                    resetAnimatingItemDimenStatus();
                                                 } else if (game.getGameType() == Game.GameType.FRIENDS || game.getGameType() == Game.GameType.ONLINE) {
-                                                    game = new Game(game.getGameType() == Game.GameType.FRIENDS ? Game.GameType.FRIENDS : Game.GameType.ONLINE);
-                                                    gameBoardV = new GameBoardV();
-                                                    initPadRaw();
-                                                    sendGameStatuses();
+                                                    // TODO sends restart game request
+                                                    if (game.getGameType() == Game.GameType.ONLINE) {
+                                                        Hashtable hashtable = new Hashtable();
+
+                                                        hashtable.put("restartRequest", "0");
+                                                        myFirebaseRef.child("randomgames/" + roomNumber).updateChildren(hashtable);
+                                                        isRematchRequester = true;
+                                                    } else {
+                                                        game = new Game(game.getGameType() == Game.GameType.FRIENDS ? Game.GameType.FRIENDS : Game.GameType.ONLINE);
+                                                        gameBoardV = new GameBoardV();
+                                                        initPadRaw();
+                                                        sendGameStatuses();
+                                                    }
                                                 }
 
                                                 invalidate();
@@ -694,6 +759,9 @@ public class GameBoardView extends View {
 
                             rematchBtn.setIsHidden(true);
                             goBackBtn.setIsHidden(true);
+                            howToPlayBackBtn.setIsHidden(true);
+
+                            resetAnimatingItemDimenStatus();
                         }
                     }
 
@@ -703,6 +771,18 @@ public class GameBoardView extends View {
             }
 
             touchedButton = null;
+
+            if (game.getGameType() == Game.GameType.TUTORIAL){
+                Log.d("hihihi", "go back to main page!");
+
+                // go back now
+                game = new Game(Game.GameType.DEMO);
+
+                isGameHost = false;
+                resetAnimatingItemDimenStatus();
+                invalidate();
+                return true;
+            }
 
             // game board interactions
             if (game.getGameType() == Game.GameType.LOCAL || game.getGameType() == Game.GameType.FRIENDS || game.getGameType() == Game.GameType.ONLINE) {
@@ -732,6 +812,7 @@ public class GameBoardView extends View {
 
                                                 // switch turn
                                                 switchTurn();
+
                                                 shouldInvalidate = true;
                                             }
 
@@ -747,7 +828,9 @@ public class GameBoardView extends View {
                                                 // check pad and board win
                                                 checkWin(i, j, k, l, game.getGameBoard().getPads()[i][j].getCells()[k][l].getCellStatus());
 
+                                                // switch turn
                                                 switchTurn();
+
                                                 sendGameStatuses();
                                                 shouldInvalidate = true;
                                             }
@@ -876,12 +959,22 @@ public class GameBoardView extends View {
 
         turnAnimation.setInterpolator(new DecelerateInterpolator());
         turnAnimation.start();
+    }
 
+    private void resetAnimatingItemDimenStatus() {
+        animatingTurnWidthRatio = ACTIVE_TURN_WIDTH_RATIO;
     }
 
     private void sendGameStatuses() {
         Hashtable hashtable = new Hashtable();
-        hashtable.put("gameStatus", game.getGameStatus() == Game.GameStatus.STARTED ? "started" : "pending");
+        if (game.getGameStatus() == Game.GameStatus.STARTED)
+            hashtable.put("gameStatus", "started");
+        else if (game.getGameStatus() == Game.GameStatus.PENDING)
+            hashtable.put("gameStatus", "pending");
+        else if (game.getGameStatus() == Game.GameStatus.COMPLETED)
+            hashtable.put("gameStatus", "completed");
+
+//        hashtable.put("gameStatus", game.getGameStatus() == Game.GameStatus.STARTED ? "started" : "pending");
         hashtable.put("gameboard", padRaw);
         hashtable.put("turn", game.getGameTurn() == Game.GameTurn.PLAYER1 ? 0 : 1);
         if (game.getGameType() == Game.GameType.FRIENDS)
@@ -909,6 +1002,7 @@ public class GameBoardView extends View {
 
                     game = new Game(gameType);
                     game.setGameHostTurn(hostGameTurn);
+                    initPadRaw();
 
                     localGameBtn.setIsHidden(true);
                     friendGameBtn.setIsHidden(true);
@@ -920,6 +1014,7 @@ public class GameBoardView extends View {
                         public void onDataChange(DataSnapshot dataSnapshot) {
                             Log.d("dataSnapShot", "dataSnapShot is recved! =" + dataSnapshot.getValue());
 
+                            boolean shouldAnimate = false;
 
                             if (dataSnapshot.getValue() == null) {
                                 // opponent has left
@@ -927,7 +1022,6 @@ public class GameBoardView extends View {
                                 invalidate();
                                 return;
                             }
-
 
                             HashMap hashMap = (HashMap) dataSnapshot.getValue(true);
 
@@ -949,7 +1043,7 @@ public class GameBoardView extends View {
 
                                                 padRaw[i][j][k][l].setLocalWinner(((Long) thatCell.get("localWinner")).intValue()); // TODO null pointer here
                                                 padRaw[i][j][k][l].setOwnBy(((Long) thatCell.get("ownBy")).intValue());
-                                                padRaw[i][j][k][l].setSymbol((String) thatCell.get("symbol"));
+                                                padRaw[i][j][k][l].setSymbol((String) thatCell.get("symbol"));                      // TODO null pointer here
                                                 padRaw[i][j][k][l].setPadActive(((Long) thatCell.get("padActive")).intValue());
 
                                                 gameBoardV.getGamePadVs()[i][j].setPadStatus(((Long) thatCell.get("padActive")).intValue() == 1 ? Pad.PadStatus.ACTIVE : Pad.PadStatus.INACTIVE);
@@ -997,9 +1091,66 @@ public class GameBoardView extends View {
                             if (hashMap.containsKey("turn")) {
                                 game.setGameTurn((((Long) hashMap.get("turn")).intValue() == 1 ? Game.GameTurn.PLAYER2 : Game.GameTurn.PLAYER1));
                                 Log.d("hihihi:", "player " + (game.getGameTurn() == Game.GameTurn.PLAYER1 ? "1" : "2") + " turn");
+                                shouldAnimate = true;
+//                                Toast.makeText(context, "turn key recved! game darw? " + (game.getGameStatus() == Game.GameStatus.COMPLETED ? " YES" : " NO"), Toast.LENGTH_SHORT).show();
+                            }
+
+                            if (hashMap.containsKey("restartRequest")) {
+                                if (hashMap.get("restartRequest").toString().equals("0") && !isRematchRequester) {
+                                    new AlertDialog.Builder(context)
+                                            .setTitle("Confirm")
+                                            .setMessage("Your opponent wants a rematch, would you like to do so?")
+                                            .setPositiveButton("Restart", new DialogInterface.OnClickListener() {
+                                                @Override
+                                                public void onClick(DialogInterface dialog, int which) {
+
+                                                    if (game.getGameType() == Game.GameType.FRIENDS || game.getGameType() == Game.GameType.ONLINE) {
+                                                        // TODO sends restart game request
+                                                        if (game.getGameType() == Game.GameType.ONLINE) {
+                                                            Hashtable hashtable = new Hashtable();
+
+                                                            hashtable.put("restartRequest", "1");
+                                                            myFirebaseRef.child("randomgames/" + roomNumber).updateChildren(hashtable);
+                                                        }
+                                                    }
+
+                                                    invalidate();
+                                                }
+                                            })
+                                            .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                                                @Override
+                                                public void onClick(DialogInterface dialog, int which) {
+                                                    if (game.getGameType() == Game.GameType.ONLINE) {
+                                                        myFirebaseRef.child("randomgames/" + roomNumber + "/restartRequest").removeValue();
+                                                    }
+                                                }
+                                            })
+                                            .setIcon(android.R.drawable.ic_dialog_alert).create().show();
+                                } else if ((hashMap.get("restartRequest").toString().equals("1"))) {
+                                    game = new Game(game.getGameType() == Game.GameType.FRIENDS ? Game.GameType.FRIENDS : Game.GameType.ONLINE);
+                                    game.setGameHostTurn(isGameHost ? Game.GameTurn.PLAYER1 : Game.GameTurn.PLAYER2);
+                                    gameBoardV = new GameBoardV();
+                                    isRematchRequester = false;
+                                    initPadRaw();
+                                    sendGameStatuses();
+                                    Hashtable hashtable = new Hashtable();
+                                    hashtable.put("restartRequest", "2");
+                                    if (game.getGameType() == Game.GameType.ONLINE)
+                                        myFirebaseRef.child("randomgames/" + roomNumber).updateChildren(hashtable);
+                                } else if ((hashMap.get("restartRequest").toString().equals("2") && isRematchRequester)) {
+                                    game = new Game(game.getGameType() == Game.GameType.FRIENDS ? Game.GameType.FRIENDS : Game.GameType.ONLINE);
+                                    game.setGameHostTurn(isGameHost ? Game.GameTurn.PLAYER1 : Game.GameTurn.PLAYER2);
+                                    gameBoardV = new GameBoardV();
+                                    isRematchRequester = false;
+                                    initPadRaw();
+                                }
+
                             }
 
                             invalidate();
+
+                            if (shouldAnimate)
+                                animateTurn();
                         }
 
                         @Override
@@ -1126,6 +1277,9 @@ public class GameBoardView extends View {
     }
 
     private void switchTurn() {
+        if (game.getGameStatus() == Game.GameStatus.COMPLETED || game.getGameStatus() == Game.GameStatus.ABORTED)
+            return;
+
         // updates data model
         game.switchGameTurn();
 
@@ -1153,7 +1307,7 @@ public class GameBoardView extends View {
         if (gameWinner != Game.GameWinner.NONE) {
             // yay! win!
             game.setGameWinner(gameWinner);
-        } else if (game.getTurnCount() == Game.MAX_TURN_COUNT) {
+        } else if (game.getTurnCount() == Game.MAX_TURN_COUNT - 1) {
             // oops, draw!
             game.declareDraw();
         }
@@ -1186,7 +1340,7 @@ public class GameBoardView extends View {
             if (game.getGameBoard().getPads()[a][b].getPadWinner() != padWinner)
                 break;
             if (a == 2 && b == 2) {
-                return padWinner == (Pad.PadWinner.NONE) ? Game.GameWinner.NONE : (padWinner == Pad.PadWinner.PLAYER1)  ? Game.GameWinner.PLAYER1 : Game.GameWinner.PLAYER2;
+                return padWinner == (Pad.PadWinner.NONE) ? Game.GameWinner.NONE : (padWinner == Pad.PadWinner.PLAYER1) ? Game.GameWinner.PLAYER1 : Game.GameWinner.PLAYER2;
             }
         }
 
@@ -1195,7 +1349,7 @@ public class GameBoardView extends View {
             if (game.getGameBoard().getPads()[a][b].getPadWinner() != padWinner)
                 break;
             if (a == 2 && b == 0) {
-                return padWinner == (Pad.PadWinner.NONE) ? Game.GameWinner.NONE : (padWinner == Pad.PadWinner.PLAYER1)  ? Game.GameWinner.PLAYER1 : Game.GameWinner.PLAYER2;
+                return padWinner == (Pad.PadWinner.NONE) ? Game.GameWinner.NONE : (padWinner == Pad.PadWinner.PLAYER1) ? Game.GameWinner.PLAYER1 : Game.GameWinner.PLAYER2;
             }
         }
 
