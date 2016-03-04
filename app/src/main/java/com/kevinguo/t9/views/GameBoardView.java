@@ -749,8 +749,13 @@ public class GameBoardView extends View {
 
                             if (game.getGameType() == Game.GameType.FRIENDS)
                                 myFirebaseRef.child("friendgames/" + roomNumber).removeValue();
-                            else if (game.getGameType() == Game.GameType.ONLINE)
+                            else if (game.getGameType() == Game.GameType.ONLINE) {
+                                // removes room in online game
                                 myFirebaseRef.child("randomgames/" + roomNumber).removeValue();
+
+                                // removes room in waiting list if there is one
+                                myFirebaseRef.child("randomgames/waitinglist/" + roomNumber).removeValue();
+                            }
 
                             // go back now
                             game = new Game(Game.GameType.DEMO);
