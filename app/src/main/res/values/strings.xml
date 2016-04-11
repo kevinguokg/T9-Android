@@ -12,5 +12,7 @@
 
     <string name="rematch_btn_text">Rematch!</string>
     <string name="go_back_btn_text">Go Back!</string>
+    
+    <string name="ad_unit_id">ca-app-pub-8658979143104994/9145750464</string>
 
 </resources>

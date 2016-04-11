@@ -9,6 +9,9 @@ import android.view.MotionEvent;
 import android.view.View;
 
 import com.firebase.client.Firebase;
+import com.google.android.gms.ads.AdListener;
+import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.InterstitialAd;
 import com.kevinguo.t9.views.GameBoardView;
 
 /**
@@ -16,6 +19,13 @@ import com.kevinguo.t9.views.GameBoardView;
  * status bar and navigation/system bar) with user interaction.
  */
 public class MainActivity extends AppCompatActivity {
+
+    public interface GameAdInteractionListener {
+        void onGameStart();
+        void onGameEnd();
+        void onGameRestart();
+    }
+
     /**
      * Whether or not the system UI should be auto-hidden after
      * {@link #AUTO_HIDE_DELAY_MILLIS} milliseconds.
@@ -88,11 +98,24 @@ public class MainActivity extends AppCompatActivity {
 
     Firebase myFirebaseRef;
 
+    private InterstitialAd mInterstitialAd;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Firebase.setAndroidContext(this);
         myFirebaseRef = new Firebase("https://t9.firebaseio.com/");
+        mInterstitialAd = new InterstitialAd(this);
+        mInterstitialAd.setAdUnitId(getResources().getString(R.string.ad_unit_id));
+        requestNewInterstitial();
+
+        mInterstitialAd.setAdListener(new AdListener() {
+            @Override
+            public void onAdClosed() {
+                requestNewInterstitial();
+            }
+        });
+
 
         setContentView(R.layout.activity_main);
 
@@ -101,6 +124,22 @@ public class MainActivity extends AppCompatActivity {
         gameBoardView = (GameBoardView) findViewById(R.id.gameBoardView);
         gameBoardView.setFireBaseRef(myFirebaseRef);
         gameBoardView.setOnTouchListener(mDelayHideTouchListener);
+        gameBoardView.setInterstitialAdListener(new GameAdInteractionListener(){
+            @Override
+            public void onGameStart() {
+                showAdIfLoaded();
+            }
+
+            @Override
+            public void onGameEnd() {
+                showAdIfLoaded();
+            }
+
+            @Override
+            public void onGameRestart() {
+                showAdIfLoaded();
+            }
+        });
 
 //        myFirebaseRef.child("message").setValue("Do you have data? You'll love Firebase.");
     }
@@ -156,5 +195,18 @@ public class MainActivity extends AppCompatActivity {
     private void delayedHide(int delayMillis) {
         mHideHandler.removeCallbacks(mHideRunnable);
         mHideHandler.postDelayed(mHideRunnable, delayMillis);
+    }
+
+    private void requestNewInterstitial() {
+        AdRequest adRequest = new AdRequest.Builder()
+                .addTestDevice("116ACFD1D7C245C8057720436E6B52C5")
+                .build();
+
+        mInterstitialAd.loadAd(adRequest);
+    }
+
+    private void showAdIfLoaded(){
+        if (mInterstitialAd.isLoaded())
+            mInterstitialAd.show();
     }
 }

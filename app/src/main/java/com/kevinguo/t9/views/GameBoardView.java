@@ -27,6 +27,7 @@ import com.firebase.client.Firebase;
 import com.firebase.client.FirebaseError;
 import com.firebase.client.Query;
 import com.firebase.client.ValueEventListener;
+import com.kevinguo.t9.MainActivity;
 import com.kevinguo.t9.R;
 import com.kevinguo.t9.models.Board;
 import com.kevinguo.t9.models.Cell;
@@ -69,6 +70,7 @@ public class GameBoardView extends View {
 
     // Firebase references
     private Firebase myFirebaseRef;
+    private MainActivity.GameAdInteractionListener gameAdInteractionListener;
 
     // data models
     private Game game;
@@ -95,6 +97,10 @@ public class GameBoardView extends View {
         super(context, attrs);
         this.context = context;
         init();
+    }
+
+    public void setInterstitialAdListener(MainActivity.GameAdInteractionListener listener){
+        gameAdInteractionListener = listener;
     }
 
     public void init() {
@@ -753,6 +759,7 @@ public class GameBoardView extends View {
                                                     createNewGame(Game.GameType.LOCAL, false);
                                                     gameBoardV = new GameBoardV();
                                                     resetAnimatingItemDimenStatus();
+                                                    gameAdInteractionListener.onGameRestart();
                                                 } else if (game.getGameType() == Game.GameType.FRIENDS || game.getGameType() == Game.GameType.ONLINE) {
                                                     // TODO sends restart game request
                                                     if (game.getGameType() == Game.GameType.ONLINE) {
@@ -1340,10 +1347,11 @@ public class GameBoardView extends View {
             // yay! win!
             game.setGameWinner(gameWinner);
             gameScore.bumpGameScore(gameWinner);
-
+            gameAdInteractionListener.onGameEnd();
         } else if (game.getTurnCount() == Game.MAX_TURN_COUNT - 1) {
             // oops, draw!
             game.declareDraw();
+            gameAdInteractionListener.onGameEnd();
         }
     }
 
